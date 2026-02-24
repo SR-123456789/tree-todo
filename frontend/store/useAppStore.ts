@@ -18,6 +18,7 @@ interface AppState {
   updateTask: (task: Task) => Promise<void>;
   moveTask: (taskId: string, newParentId: string | null, newOrder: number) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  duplicateTask: (taskId: string) => Promise<void>;
   reorderTasks: (tasks: Task[]) => Promise<void>; // useful for dnd
   updateTaskPosition: (taskId: string, position: { x: number, y: number }) => Promise<void>;
 }
@@ -134,5 +135,46 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
       return { tasks: newTasks };
     });
+  },
+
+  duplicateTask: async (taskId: string) => {
+    const { tasks, addTask, updateTaskPosition } = get();
+    const sourceTask = tasks.find(t => t.id === taskId);
+    if (!sourceTask) return;
+
+    // Helper to recursively copy
+    const copyRecursive = async (taskToCopy: Task, newParentId: string | null, offset: number) => {
+      // 1. Create a clear copy using addTask to get a new ID and save to DB
+      const newTask = await addTask(taskToCopy.projectId, newParentId, taskToCopy.title);
+      
+      // 2. Hydrate other properties (checklist, state, position if root)
+      const hydratedTask = {
+        ...newTask,
+        isCompleted: taskToCopy.isCompleted,
+        isExpanded: taskToCopy.isExpanded,
+        checklist: taskToCopy.checklist ? taskToCopy.checklist.map(c => ({...c, id: crypto.randomUUID()})) : [],
+        // give root duplicated items a slight offset so they don't exactly overlap
+        position: offset && taskToCopy.position ? { x: taskToCopy.position.x + offset, y: taskToCopy.position.y + offset } : undefined
+      };
+      
+      await taskRepo.update(hydratedTask);
+
+      // 3. Find and copy children
+      const children = tasks.filter(t => t.parentId === taskToCopy.id);
+      for (const child of children) {
+         await copyRecursive(child, hydratedTask.id, 0); // Children don't need positional offsets as Dagre handles them
+      }
+      
+      return hydratedTask;
+    };
+
+    const rootDuplicated = await copyRecursive(sourceTask, sourceTask.parentId, 50);
+
+    // Update store state with newly created items
+    // Since copyRecursive uses taskRepo, we can just reload tasks for the project to ensure exact sync
+    const reloadedTasks = await taskRepo.getByProject(sourceTask.projectId);
+    set({ tasks: reloadedTasks });
+    
+    // Select the new node visually by moving to it? Handled by ReactFlow generally, but position updates if needed
   }
 }));

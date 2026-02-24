@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import { useAppStore } from '../store/useAppStore';
 import TaskNode, { TaskNodeData } from './TaskNode';
+import { Task } from '../domain/task';
 
 const nodeTypes: NodeTypes = {
   customTask: TaskNode as any,
@@ -68,14 +69,12 @@ function getLayoutedElements(nodes: Node[], edges: Edge[], direction = 'LR') {
 }
 
 interface WhiteboardTreeProps {
-  projectId: string;
+  projectTasks: Task[];
 }
 
-function Flow({ projectId }: WhiteboardTreeProps) {
-  const { tasks, updateTaskPosition, moveTask } = useAppStore();
+function Flow({ projectTasks }: WhiteboardTreeProps) {
+  const { updateTaskPosition, moveTask } = useAppStore();
   const { fitView } = useReactFlow();
-
-  const projectTasks = useMemo(() => tasks.filter((t) => t.projectId === projectId), [tasks, projectId]);
 
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: Node[] = [];
@@ -101,7 +100,7 @@ function Flow({ projectId }: WhiteboardTreeProps) {
             target: task.id,
             type: 'smoothstep',
             animated: !task.isCompleted,
-            style: { stroke: task.isCompleted ? '#9ca3af' : '#3b82f6', strokeWidth: 2 }
+            style: { stroke: task.isCompleted ? '#9ca3af' : '#06b6d4', strokeWidth: 2 } // Cyan stroke
           });
         }
       }
@@ -129,13 +128,11 @@ function Flow({ projectId }: WhiteboardTreeProps) {
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const [edges, setEdges] = React.useState<Edge[]>([]);
 
-  // Synchronize when tasks change from outside (e.g. deletion, edits)
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
   }, [initialNodes, initialEdges]);
 
-  // Initial centering
   useEffect(() => {
     if (nodes.length > 0) {
        setTimeout(() => fitView({ padding: 0.2, duration: 800 }), 100);
@@ -146,7 +143,6 @@ function Flow({ projectId }: WhiteboardTreeProps) {
     (changes: NodeChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
       
-      // Look for position changes to persist
       changes.forEach(change => {
         if (change.type === 'position' && change.dragging === false && change.position) {
             updateTaskPosition(change.id, change.position);
@@ -158,13 +154,7 @@ function Flow({ projectId }: WhiteboardTreeProps) {
 
   const onNodesDelete = useCallback(
     (deletedNodes: Node[]) => {
-      // When user presses Delete/Backspace on selected nodes
       deletedNodes.forEach(node => {
-        // `deleteTask` recursively deletes all children inside `localTask.repository.ts` / Zustand if we implemented it,
-        // Wait, did we implement recursive delete?
-        // Let's rely on the store action. If it doesn't delete children, we'll need to do it.
-        // For now, trigger store delete.
-        // We will improve `deleteTask` in useAppStore or local repo next if needed.
         useAppStore.getState().deleteTask(node.id);
       });
     },
@@ -173,6 +163,16 @@ function Flow({ projectId }: WhiteboardTreeProps) {
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+
+  const onEdgesDelete = useCallback(
+    (deletedEdges: Edge[]) => {
+      deletedEdges.forEach(edge => {
+        const taskId = edge.target;
+        useAppStore.getState().moveTask(taskId, null, 0);
+      });
+    },
     []
   );
 
@@ -186,29 +186,30 @@ function Flow({ projectId }: WhiteboardTreeProps) {
   );
 
   return (
-    <div className="w-full h-full bg-gray-50 dark:bg-gray-900">
+    <div className="w-full h-full"> {/* Parent page controls bg */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onNodesDelete={onNodesDelete}
         onEdgesChange={onEdgesChange}
+        onEdgesDelete={onEdgesDelete}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
       >
-        <Controls />
-        <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="#9ca3af" />
+        <Controls className="backdrop-blur-md bg-white/20 dark:bg-gray-800/20 border-white/20 rounded-lg overflow-hidden" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={2} className="opacity-40" />
       </ReactFlow>
     </div>
   );
 }
 
-export function WhiteboardTree({ projectId }: WhiteboardTreeProps) {
+export function WhiteboardTree({ projectTasks }: WhiteboardTreeProps) {
   return (
     <ReactFlowProvider>
-      <Flow projectId={projectId} />
+      <Flow projectTasks={projectTasks} />
     </ReactFlowProvider>
   );
 }

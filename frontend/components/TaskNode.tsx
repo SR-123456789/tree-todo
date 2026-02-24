@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { ChevronRight, ChevronDown, Check, Edit2, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Edit2, Plus, Trash2, Copy } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Task } from '../domain/task';
 import { useAppStore } from '../store/useAppStore';
@@ -85,28 +85,27 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
 
   return (
     <div className={cn(
-      "relative min-w-[200px] bg-white dark:bg-gray-800 border-2 rounded-xl shadow-sm transition-all group",
-      task.isCompleted ? "border-emerald-500/50 opacity-80" : "border-gray-200 dark:border-gray-700",
-      "hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500"
+      "relative min-w-[240px] max-w-[320px] backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-xl transition-all duration-300 ease-out group",
+      task.isCompleted 
+        ? "bg-white/40 dark:bg-gray-900/40 border-emerald-400/50 shadow-emerald-500/10 opacity-75 grayscale-[20%]" 
+        : "bg-white/80 dark:bg-gray-800/80 hover:shadow-cyan-500/20 hover:border-cyan-400/50 hover:-translate-y-0.5"
     )}>
-      {/* Target handle - Left side (for children connecting to parents) */}
-      {!isRoot && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          className="w-3 h-3 bg-blue-500 border-2 border-white dark:border-gray-800"
-        />
-      )}
+      {/* Target handle - Left side (always visible so we can connect isolated elements) */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="w-4 h-4 bg-gradient-to-br from-cyan-400 to-blue-500 border-2 border-white dark:border-gray-800 shadow-md transition-transform hover:scale-125 hover:shadow-cyan-500/50"
+      />
 
       <div className="p-3 flex items-start gap-2">
         {/* Complete Checkbox */}
         <button
           onClick={handleToggleComplete}
           className={cn(
-            "mt-0.5 w-5 h-5 flex items-center justify-center rounded border transition-colors shrink-0",
+            "mt-0.5 w-5 h-5 flex items-center justify-center rounded-lg border transition-all duration-300 shrink-0",
             task.isCompleted
-              ? "bg-emerald-500 border-emerald-500 text-white"
-              : "border-gray-300 dark:border-gray-600 hover:border-emerald-500 bg-gray-50 dark:bg-gray-900"
+              ? "bg-gradient-to-br from-emerald-400 to-emerald-600 border-transparent text-white shadow-inner"
+              : "border-gray-300 dark:border-gray-600 hover:border-cyan-500/80 bg-white/50 dark:bg-gray-900/50 hover:shadow-[0_0_8px_rgba(6,182,212,0.5)]"
           )}
         >
           {task.isCompleted && <Check size={14} strokeWidth={3} />}
@@ -138,18 +137,25 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
       </div>
 
       {/* Action Bar (Below Title) */}
-      <div className="border-t border-gray-100 dark:border-gray-700/50 px-2 py-1 flex items-center justify-between text-gray-400 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
+      <div className="border-t border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5 flex items-center justify-between text-gray-400 bg-white/30 dark:bg-gray-900/30 rounded-b-2xl transition-colors">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsEditing(true)}
-            className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+            className="p-1.5 hover:text-cyan-600 hover:bg-cyan-500/10 rounded-lg transition-all hover:scale-110 active:scale-95"
             title="Edit task"
           >
             <Edit2 size={14} />
           </button>
           <button
+            onClick={() => useAppStore.getState().duplicateTask(task.id)}
+            className="p-1.5 hover:text-purple-600 hover:bg-purple-500/10 rounded-lg transition-all hover:scale-110 active:scale-95"
+            title="Duplicate task"
+          >
+            <Copy size={14} />
+          </button>
+          <button
             onClick={() => deleteTask(task.id)}
-            className="p-1 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+            className="p-1.5 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg transition-all hover:scale-110 active:scale-95"
             title="Delete task"
           >
             <Trash2 size={14} />
@@ -159,14 +165,14 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
         <div className="flex items-center gap-1">
            <button
             onClick={handleToggleExpand}
-            className="p-1 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+            className="p-1.5 hover:text-gray-900 dark:hover:text-white hover:bg-gray-500/10 rounded-lg transition-all active:scale-95"
             title={task.isExpanded ? "Collapse children" : "Expand children"}
           >
             {task.isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
           <button
             onClick={handleAddSubTask}
-            className="p-1 text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+            className="p-1.5 text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg transition-all hover:scale-110 active:scale-95"
             title="Add subtask"
           >
             <Plus size={16} />
@@ -176,44 +182,44 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
 
       {/* Checklist section */}
       {task.isExpanded && (
-        <div className="border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/30 dark:bg-gray-800/30 p-2 text-sm rounded-b-xl">
+        <div className="border-t border-gray-200/50 dark:border-gray-700/50 bg-white/20 dark:bg-gray-900/20 px-3 py-2 text-sm rounded-b-2xl">
           <div className="flex flex-col gap-1.5">
             {task.checklist?.map((item, idx) => (
-              <div key={item.id || idx} className="flex gap-2 items-center group/item hover:bg-black/5 dark:hover:bg-white/5 p-1 rounded transition-colors">
+              <div key={item.id || idx} className="flex gap-2 items-center group/item hover:bg-black/5 dark:hover:bg-white/5 p-1 rounded-lg transition-colors">
                 <button
                   onClick={() => handleToggleChecklistItem(item.id)}
                   className={cn(
-                    "w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-colors",
+                    "w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-all duration-300",
                     item.isCompleted 
-                      ? "bg-emerald-500 border-emerald-500 text-white" 
-                      : "border-gray-300 dark:border-gray-600 hover:border-emerald-500 bg-white dark:bg-gray-900"
+                      ? "bg-gradient-to-br from-emerald-400 to-emerald-600 border-transparent text-white" 
+                      : "border-gray-300 dark:border-gray-600 hover:border-cyan-500 bg-white/50 dark:bg-gray-900/50"
                   )}
                 >
-                  {item.isCompleted && <Check size={12} strokeWidth={3} />}
+                  {item.isCompleted && <Check size={10} strokeWidth={3} />}
                 </button>
                 <span className={cn(
-                  "flex-1 text-xs truncate", 
-                  item.isCompleted ? "line-through text-gray-400" : "text-gray-700 dark:text-gray-300"
+                  "flex-1 text-xs truncate transition-all", 
+                  item.isCompleted ? "line-through text-gray-400 opacity-60" : "text-gray-700 dark:text-gray-200 font-medium"
                 )}>
                   {item.title}
                 </span>
                 <button
                   onClick={() => handleDeleteChecklistItem(item.id)}
-                  className="opacity-0 group-hover/item:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-0.5"
+                  className="opacity-0 group-hover/item:opacity-100 text-gray-400 hover:text-rose-500 transition-all p-1 hover:scale-110"
                 >
                   <Trash2 size={12} />
                 </button>
               </div>
             ))}
             
-            <form onSubmit={handleAddChecklistItem} className="flex gap-2 items-center mt-1">
-              <Plus size={14} className="text-gray-400 shrink-0 mx-1" />
+            <form onSubmit={handleAddChecklistItem} className="flex gap-2 items-center mt-2 bg-black/5 dark:bg-white/5 rounded-lg px-2 py-1.5 border border-transparent focus-within:border-cyan-500/30 focus-within:bg-white/50 dark:focus-within:bg-gray-900/50 transition-all">
+              <Plus size={12} className="text-cyan-500 shrink-0" />
               <input
                 type="text"
                 value={newChecklistTitle}
                 onChange={(e) => setNewChecklistTitle(e.target.value)}
                 placeholder="Add checklist item..."
-                className="flex-1 bg-transparent text-xs outline-none text-gray-700 dark:text-gray-300 placeholder-gray-400"
+                className="flex-1 bg-transparent text-xs outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 font-medium"
               />
             </form>
           </div>
@@ -224,7 +230,7 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-blue-500 border-2 border-white dark:border-gray-800"
+        className="w-4 h-4 bg-gradient-to-br from-indigo-500 to-purple-500 border-2 border-white dark:border-gray-800 shadow-md transition-transform hover:scale-125 hover:shadow-indigo-500/50"
       />
     </div>
   );
