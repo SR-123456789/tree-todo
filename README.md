@@ -14,6 +14,7 @@
 > Visualize your entire project structure without boundaries. Build infinitely nested parent-child relationships, seamlessly connect discrete tasks, and manage checklists directly within each node.
 
 ---
+<img width="1430" height="768" alt="image" src="https://github.com/user-attachments/assets/de7b85ca-01d6-4bcc-a8c7-c6ffd9b91304" />
 
 ## ✨ Features
 
