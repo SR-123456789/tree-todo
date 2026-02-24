@@ -12,6 +12,7 @@ interface AppState {
   loadTasks: (projectId: string) => Promise<void>;
   
   addProject: (title: string) => Promise<Project>;
+  updateProject: (id: string, title: string) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   
   addTask: (projectId: string, parentId: string | null, title?: string) => Promise<Task>;
@@ -44,6 +45,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const project = await projectRepo.create(title);
     set((state) => ({ projects: [...state.projects, project] }));
     return project;
+  },
+
+  updateProject: async (id: string, title: string) => {
+    await projectRepo.update(id, title);
+    set((state) => ({
+      projects: state.projects.map(p => 
+        p.id === id ? { ...p, title, updatedAt: new Date().toISOString() } : p
+      )
+    }));
   },
   
   deleteProject: async (projectId: string) => {

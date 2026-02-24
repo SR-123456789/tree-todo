@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { FolderPlus, Trash2, ChevronRight } from 'lucide-react';
 
 export default function Home() {
-  const { projects, loadProjects, addProject, deleteProject } = useAppStore();
+  const { projects, loadProjects, addProject, deleteProject, updateProject } = useAppStore();
   const [newTitle, setNewTitle] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
 
   useEffect(() => {
     loadProjects();
@@ -15,9 +17,16 @@ export default function Home() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
-    await addProject(newTitle.trim());
+    const title = newTitle.trim() || 'New Project';
+    await addProject(title);
     setNewTitle('');
+  };
+
+  const handleEditSubmit = (id: string, oldTitle: string) => {
+    if (editTitle.trim() && editTitle.trim() !== oldTitle) {
+      updateProject(id, editTitle.trim());
+    }
+    setEditingId(null);
   };
 
   return (
@@ -38,8 +47,7 @@ export default function Home() {
           />
           <button
             type="submit"
-            disabled={!newTitle.trim()}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm hover:shadow-md"
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
           >
             <FolderPlus size={20} />
             Create Project
@@ -54,10 +62,34 @@ export default function Home() {
             >
               <Link
                 href={`/project/${project.id}`}
-                className="flex flex-1 items-center gap-4"
+                className="flex flex-1 items-center gap-4 cursor-pointer"
               >
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">{project.title}</h2>
+                <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                  {editingId === project.id ? (
+                    <input
+                      autoFocus
+                      className="text-xl font-bold bg-gray-50 dark:bg-gray-900 border border-blue-400 rounded px-2 py-0.5 outline-none w-full"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onBlur={() => handleEditSubmit(project.id, project.title)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleEditSubmit(project.id, project.title);
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                    />
+                  ) : (
+                    <h2 
+                      className="text-xl font-bold hover:text-blue-600 transition-colors"
+                      onDoubleClick={(e) => {
+                        e.preventDefault();
+                        setEditTitle(project.title);
+                        setEditingId(project.id);
+                      }}
+                      title="Double-click to rename"
+                    >
+                      {project.title}
+                    </h2>
+                  )}
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Created: {new Date(project.createdAt).toLocaleDateString()}
                   </p>

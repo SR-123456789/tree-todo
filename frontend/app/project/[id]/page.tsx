@@ -9,9 +9,11 @@ import { WhiteboardTree } from '@/components/WhiteboardTree';
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { projects, loadProjects, loadTasks, addTask, tasks } = useAppStore();
+  const { projects, loadProjects, loadTasks, addTask, tasks, updateProject } = useAppStore();
   const projectTasks = tasks.filter(t => t.projectId === id);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editProjectTitle, setEditProjectTitle] = useState('');
   
   useEffect(() => {
     loadProjects();
@@ -22,10 +24,17 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
   if (!project) return null;
 
+  const handleEditTitleSubmit = () => {
+    if (editProjectTitle.trim() && editProjectTitle.trim() !== project.title) {
+      updateProject(project.id, editProjectTitle.trim());
+    }
+    setIsEditingTitle(false);
+  };
+
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    addTask(project.id, null, newTaskTitle.trim());
+    const title = newTaskTitle.trim() || 'New Task';
+    addTask(project.id, null, title);
     setNewTaskTitle('');
   };
 
@@ -52,9 +61,30 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-cyan-600 dark:from-indigo-400 dark:to-cyan-400">
-              {project.title}
-            </h1>
+            {isEditingTitle ? (
+              <input
+                autoFocus
+                className="text-xl font-bold bg-white/50 dark:bg-gray-800/50 rounded px-2 py-0 border-none outline-none focus:ring-2 focus:ring-cyan-500/50 text-gray-900 dark:text-gray-100"
+                value={editProjectTitle}
+                onChange={(e) => setEditProjectTitle(e.target.value)}
+                onBlur={handleEditTitleSubmit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleEditTitleSubmit();
+                  if (e.key === 'Escape') setIsEditingTitle(false);
+                }}
+              />
+            ) : (
+              <h1 
+                onDoubleClick={() => {
+                  setEditProjectTitle(project.title);
+                  setIsEditingTitle(true);
+                }}
+                className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-cyan-600 dark:from-indigo-400 dark:to-cyan-400 cursor-text"
+                title="Double-click to rename"
+              >
+                {project.title}
+              </h1>
+            )}
             <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide">
               Task Whiteboard
             </p>

@@ -103,3 +103,30 @@ All UI generation must comply with the rules defined in `design.md`.
 - If design rules are unclear, ask before generating UI.
 
 Design decisions are not flexible.
+
+# 9. Completion Validation (Mandatory)
+
+All tasks must undergo a final validation process before being declared complete.
+
+## Required Verification Checklist
+
+Before declaring completion, you must:
+
+- Perform a final architectural review.
+- Re-check frontend architecture constraints.
+- Re-check backend layer separation rules.
+- Confirm no cross-layer dependency violations.
+- Confirm no business logic exists inside UI components.
+- Confirm no API calls exist inside atoms or molecules.
+- Confirm state management lives in feature-level hooks or services.
+- Confirm strict type safety (no `any`, no duplicated types).
+- Confirm no redundant business logic exists.
+- Confirm design system compliance (if UI is involved).
+
+## Completion Declaration Rule
+
+You must not declare a task as completed until all verification steps above have been re-confirmed.
+
+If verification cannot be fully performed, you must explicitly state what could not be validated and why.
+
+Completion may only be declared after validation is explicitly acknowledged.

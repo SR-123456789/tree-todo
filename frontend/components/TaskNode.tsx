@@ -20,11 +20,10 @@ export default function TaskNode({ data }: { data: TaskNodeData }) {
 
   const handleAddChecklistItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChecklistTitle.trim()) return;
 
     const newItem = {
       id: crypto.randomUUID(),
-      title: newChecklistTitle.trim(),
+      title: newChecklistTitle.trim() || 'New Item',
       isCompleted: false,
     };
 

@@ -199,7 +199,7 @@ function Flow({ projectTasks }: WhiteboardTreeProps) {
         fitView
         proOptions={{ hideAttribution: true }}
       >
-        <Controls className="backdrop-blur-md bg-white/20 dark:bg-gray-800/20 border-white/20 rounded-lg overflow-hidden" />
+        <Controls className="backdrop-blur-md bg-white/20 dark:bg-gray-800/20 border-white/20 rounded-lg overflow-hidden [&_button]:bg-white/80 dark:[&_button]:bg-gray-800/80 [&_button]:border-b-gray-200 dark:[&_button]:border-b-gray-700 [&_svg]:fill-gray-700 dark:[&_svg]:fill-gray-200" />
         <Background variant={BackgroundVariant.Dots} gap={24} size={2} className="opacity-40" />
       </ReactFlow>
     </div>
